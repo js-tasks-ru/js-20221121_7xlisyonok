@@ -6,7 +6,7 @@
  */
 export const pick = (obj, ...fields) => {
   const entries = Object.entries(obj);
-  const filtered = entries.filter((p) => fields.indexOf(p[0]) !== -1);
+  const filtered = entries.filter(([key]) => fields.includes(key));
   return Object.fromEntries(filtered);
 };
 
@@ -16,9 +16,9 @@ export const pickReduceWrong = (obj, ...fs) =>
 
 // Корректный вариант с reduce
 export const pickReduce = (obj, ...fields) => {
-  return fields.reduce((newObj, f) => {
-    if (f in obj) {
-      newObj[f] = obj[f];
+  return fields.reduce((newObj, field) => {
+    if (field in obj) {
+      newObj[field] = obj[field];
     }
     return newObj;
   }, {});

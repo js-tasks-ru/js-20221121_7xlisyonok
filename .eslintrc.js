@@ -23,7 +23,7 @@ module.exports = {
     'valid-typeof': 'warn',
     'no-multi-spaces': 'warn',
     'no-with': 'warn',
-    'curly': 'warn',
+    //'curly': 'warn',
     'no-unused-expressions': 'warn',
     'no-shadow-restricted-names': 'warn',
     'no-undefined': 'off',
