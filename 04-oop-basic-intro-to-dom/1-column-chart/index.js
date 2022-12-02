@@ -1,12 +1,18 @@
 export default class ColumnChart {
-  constructor(p = {}) {
-    this.chartHeight = p.chartHeight ?? 50;
-    this.label = p.label ?? "";
-    this.link = p.link ?? "";
-    this.value = p.value ?? "";
-    this.lavel = p.lavel ?? "";
-    this.data = p.data ?? [];
-    this.formatHeading = p.formatHeading ?? ((data) => data);
+  constructor({
+    chartHeight = 50,
+    label = "",
+    link = "",
+    value = "",
+    data = [],
+    formatHeading = (data) => data,
+  } = {}) {
+    this.chartHeight = chartHeight;
+    this.label = label;
+    this.link = link;
+    this.value = value;
+    this.data = data;
+    this.formatHeading = formatHeading;
 
     this.render();
     this.initEventListeners();
