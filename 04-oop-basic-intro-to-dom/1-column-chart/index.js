@@ -35,15 +35,15 @@ export default class ColumnChart {
   }
 
   getLinesTemplate() {
-    return this.getColumnProps().map(this.lineTemplate);
+    return this.getColumnProps().map(this.lineTemplate).join("");
   }
 
   hasData() {
-    return this.data.length >= 0;
+    return this.data.length > 0;
   }
 
   getTemplate() {
-    const chartLoadingClass = this.hasData() ? "column-chart_loading" : "";
+    const chartLoadingClass = this.hasData() ? "" : "column-chart_loading";
 
     return `
       <div class="column-chart ${chartLoadingClass}" style="--chart-height: 50">
