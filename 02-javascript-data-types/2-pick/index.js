@@ -17,7 +17,7 @@ export const pickReduceWrong = (obj, ...fs) =>
 // Корректный вариант с reduce
 export const pickReduce = (obj, ...fields) => {
   return fields.reduce((newObj, field) => {
-    if (field in obj) {
+    if (Object.hasOwn(obj, field)) {
       newObj[field] = obj[field];
     }
     return newObj;
