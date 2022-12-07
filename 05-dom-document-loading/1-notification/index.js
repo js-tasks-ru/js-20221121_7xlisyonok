@@ -1,6 +1,6 @@
 export default class NotificationMessage {
   /**
-   * Список
+   * Текущий NotificationMessage на странице
    * @type {NotificationMessage}
    */
   static current = null;
