@@ -7,10 +7,39 @@ export default class SortableTable {
   /** @type {[TableRow]} */
   rows = [];
 
-  constructor(headerConfig = [], rowsData = []) {
-    this.columns = headerConfig.map((conf) => new TableColumn(conf));
-    this.rows = rowsData.map((row) => new TableRow(row, this.columns));
+  constructor(headers, { data = [], sorted = null } = {}) {
+    this.createColumns(headers);
+    this.createRows(data);
     this.render();
+
+    if (sorted) {
+      this.sort(sorted.id, sorted.order);
+    } else {
+      this.sortByColumn(this.columns.find((column) => column.sortable));
+    }
+  }
+
+  createColumns(headers) {
+    this.columns = headers.map((conf) => {
+      const column = new TableColumn(conf);
+
+      if (column.sortable) {
+        column.onClick(() => {
+          this.sortByColumn(column);
+        });
+      }
+      return column;
+    });
+  }
+
+  createRows(data) {
+    this.rows = data.map((row) => new TableRow(row, this.columns));
+  }
+
+  /** @param {TableColumn} column */
+  sortByColumn(column) {
+    const newOrder = column.order === "desc" ? "asc" : "desc";
+    this.sort(column.id, newOrder);
   }
 
   getColumn(id) {
@@ -63,16 +92,19 @@ export default class SortableTable {
 
   remove() {
     this.element.remove();
-    this.columns.forEach((column) => column.remove());
-    this.rows.forEach((row) => row.remove());
   }
 
   destroy() {
     this.remove();
+    this.columns.forEach((column) => column.destroy());
+    this.rows.forEach((row) => row.destroy());
   }
 }
 
 class TableColumn {
+  /** @type {[{type: string, callback: function}]} */
+  listeners = [];
+
   constructor({
     id = "",
     title = "",
@@ -95,13 +127,21 @@ class TableColumn {
     this.element.setAttribute("data-order", this.order);
   }
 
-  getTemplate() {
+  getArrowTemplate() {
+    if (!this.sortable) return "";
     return `
-      <div class="sortable-table__cell" data-id="images" data-sortable="${this.sortable}">
-        <span>${this.title}</span>
-        <span data-element="arrow" class="sortable-table__sort-arrow">
-          <span class="sort-arrow"></span>
-        </span>
+      <span data-element="arrow" class="sortable-table__sort-arrow">
+        <span class="sort-arrow"></span>
+      </span>
+    `;
+  }
+
+  getTemplate() {
+    const { id, sortable, title } = this;
+    return `
+      <div class="sortable-table__cell" data-id="${id}" data-sortable="${sortable}">
+        <span>${title}</span>
+        ${this.getArrowTemplate()}
       </div>
     `;
   }
@@ -112,7 +152,17 @@ class TableColumn {
     this.element = element.firstElementChild;
   }
 
-  remove() {
+  onClick(callback) {
+    const type = "pointerdown";
+    this.element.addEventListener(type, callback);
+    this.listeners.push({ type, callback });
+  }
+
+  destroy() {
+    this.listeners.forEach((event) => {
+      this.element.removeEventListener(event.type, event.callback);
+    });
+
     this.element.remove();
   }
 }
@@ -132,9 +182,9 @@ class TableRow {
 
   getTemplate() {
     return `
-    <a href="/products/${this.data.id}" class="sortable-table__row">
-      ${this.getCellsTemplate()}
-    </a>
+      <a href="/products/${this.data.id}" class="sortable-table__row">
+        ${this.getCellsTemplate()}
+      </a>
     `;
   }
 
@@ -144,7 +194,7 @@ class TableRow {
     this.element = element.firstElementChild;
   }
 
-  remove() {
+  destroy() {
     this.element.remove();
   }
 }
