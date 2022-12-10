@@ -1,6 +1,5 @@
 export default class DoubleSlider {
   subElements = {};
-  selected = { from: 0, to: Infinity };
 
   constructor({
     min = 0,
