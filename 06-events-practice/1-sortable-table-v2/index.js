@@ -7,6 +7,10 @@ export default class SortableTable {
   /** @type {[TableRow]} */
   rows = [];
 
+  /**
+   * @param {[ Object ]} headers - Массив конструкторов для TableColumn
+   * @param {{ data: [], sorted: {id: string, order: "asc"|"desc">} }} param1 Данные и параметры сортировки
+   */
   constructor(headers, { data = [], sorted = null } = {}) {
     this.createColumns(headers);
     this.createRows(data);
