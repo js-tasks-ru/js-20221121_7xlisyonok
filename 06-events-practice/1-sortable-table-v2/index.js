@@ -14,13 +14,14 @@ export default class SortableTable {
   constructor(headers, { data = [], sorted = null } = {}) {
     this.createColumns(headers);
     this.createRows(data);
-    this.render();
 
     if (sorted) {
       this.sort(sorted.id, sorted.order);
     } else {
       this.sortByColumn(this.columns.find((column) => column.sortable));
     }
+
+    this.render();
   }
 
   createColumns(headers) {
@@ -57,7 +58,9 @@ export default class SortableTable {
 
     const comparer = SortableTableComparers.get(column.sortType, order);
     this.rows.sort((a, b) => comparer(a.data[columnId], b.data[columnId]));
-    this.renderBody();
+
+    // is body rendered?
+    if (this.body) this.renderBody();
   }
 
   getTemplate() {
