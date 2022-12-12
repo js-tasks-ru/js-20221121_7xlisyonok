@@ -207,22 +207,26 @@ class SliderThumb {
   initEventListeners() {
     this.initEvent(this.element, "pointerdown", (event) => {
       this.startX = event.clientX;
+      this.pointerId = event.pointerId;
       this.startMove();
     });
   }
 
   startMove() {
-    this.initEvent(document, "pointerup", () => {
+    this.initEvent(document, "pointerup", (event) => {
+      if (this.pointerId !== event.pointerId) return;
+
       this.setPrevValue(this.newValue);
       this.newValue = null;
-
       this.removeListeners("pointerup", "pointermove");
       this.changeCb();
     });
 
     this.initEvent(document, "pointermove", (event) => {
+      if (this.pointerId !== event.pointerId) return;
+
       const newValuePx = event.clientX - this.parentLeft;
-      let newValuePc = this.pxToPс(newValuePx); /*this.prevValue + changePc*/
+      let newValuePc = this.pxToPс(newValuePx);
       if (newValuePc < this.min) newValuePc = this.min;
       if (newValuePc > this.max) newValuePc = this.max;
 

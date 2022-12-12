@@ -7,39 +7,22 @@ export default class SortableTable {
   /** @type {[TableRow]} */
   rows = [];
 
+  /**
+   * @param {[ Object ]} headers - Массив конструкторов для TableColumn
+   * @param {{ data: [], sorted: {id: string, order: "asc"|"desc">} }} param1 Данные и параметры сортировки
+   */
   constructor(headers, { data = [], sorted = null } = {}) {
-    this.createColumns(headers);
-    this.createRows(data);
-    this.render();
+    this.columns = headers.map((conf) => new TableColumn(conf));
+    this.rows = data.map((row) => new TableRow(row, this.columns));
 
     if (sorted) {
       this.sort(sorted.id, sorted.order);
     } else {
       this.sortByColumn(this.columns.find((column) => column.sortable));
     }
-  }
 
-  createColumns(headers) {
-    this.columns = headers.map((conf) => {
-      const column = new TableColumn(conf);
-
-      if (column.sortable) {
-        column.onClick(() => {
-          this.sortByColumn(column);
-        });
-      }
-      return column;
-    });
-  }
-
-  createRows(data) {
-    this.rows = data.map((row) => new TableRow(row, this.columns));
-  }
-
-  /** @param {TableColumn} column */
-  sortByColumn(column) {
-    const newOrder = column.order === "desc" ? "asc" : "desc";
-    this.sort(column.id, newOrder);
+    this.render();
+    this.initEventListeners();
   }
 
   getColumn(id) {
@@ -53,7 +36,9 @@ export default class SortableTable {
 
     const comparer = SortableTableComparers.get(column.sortType, order);
     this.rows.sort((a, b) => comparer(a.data[columnId], b.data[columnId]));
-    this.renderBody();
+
+    // is body rendered?
+    if (this.isBodyRendered) this.renderBody();
   }
 
   getTemplate() {
@@ -77,6 +62,10 @@ export default class SortableTable {
     this.rows.forEach((row) => body.append(row.element));
   }
 
+  get isBodyRendered() {
+    return Boolean(this.subElements);
+  }
+
   render() {
     const element = document.createElement("div");
     element.innerHTML = this.getTemplate();
@@ -90,6 +79,25 @@ export default class SortableTable {
     this.renderBody();
   }
 
+  initEventListeners() {
+    this.listeners = {
+      headerClick: (event) => {
+        /** @type {HTMLElement} */
+        const columnElement = event.target.closest("[data-sortable=true]");
+        if (!columnElement) return;
+
+        const columnId = columnElement.getAttribute("data-id");
+        const columnOrder = columnElement.getAttribute("data-order");
+        const newOrder = columnOrder === "desc" ? "asc" : "desc";
+        this.sort(columnId, newOrder);
+      },
+    };
+
+    const { header } = this.subElements;
+    const { headerClick } = this.listeners;
+    header.addEventListener("pointerdown", headerClick);
+  }
+
   remove() {
     this.element.remove();
   }
@@ -98,13 +106,14 @@ export default class SortableTable {
     this.remove();
     this.columns.forEach((column) => column.destroy());
     this.rows.forEach((row) => row.destroy());
+
+    const { header } = this.subElements;
+    const { headerClick } = this.listeners;
+    header.removeEventListener("pointerdown", headerClick);
   }
 }
 
 class TableColumn {
-  /** @type {[{type: string, callback: function}]} */
-  listeners = [];
-
   constructor({
     id = "",
     title = "",
@@ -152,17 +161,7 @@ class TableColumn {
     this.element = element.firstElementChild;
   }
 
-  onClick(callback) {
-    const type = "pointerdown";
-    this.element.addEventListener(type, callback);
-    this.listeners.push({ type, callback });
-  }
-
   destroy() {
-    this.listeners.forEach((event) => {
-      this.element.removeEventListener(event.type, event.callback);
-    });
-
     this.element.remove();
   }
 }
