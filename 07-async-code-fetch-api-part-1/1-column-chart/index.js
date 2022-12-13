@@ -7,9 +7,16 @@ export default class ColumnChart {
     chartHeight = 50,
     label = "",
     link = "",
+
     value = "",
     data = [],
     formatHeading = (data) => data,
+
+    url = null,
+    range = {
+      from: new Date(),
+      to: new Date(),
+    },
   } = {}) {
     this.chartHeight = chartHeight;
     this.label = label;
@@ -19,7 +26,11 @@ export default class ColumnChart {
     this.formatHeading = formatHeading;
 
     this.render();
-    this.initEventListeners();
+
+    if (url) {
+      this.url = url;
+      this.update(range.from, range.to);
+    }
   }
 
   getColumnProps() {
@@ -46,44 +57,65 @@ export default class ColumnChart {
     return this.data.length > 0;
   }
 
-  getTemplate() {
-    const chartLoadingClass = this.hasData() ? "" : "column-chart_loading";
+  clearData() {
+    this.data = [];
+    this.refresh();
+  }
 
+  getTemplate() {
     return `
-      <div class="column-chart ${chartLoadingClass}" style="--chart-height: 50">
+      <div class="column-chart" style="--chart-height: 50">
         <div class="column-chart__title">
           ${this.label}
           <a href="/sales" class="column-chart__link">View all</a>
         </div>
         <div class="column-chart__container">
-          <div data-element="header" class="column-chart__header">
-            ${this.formatHeading(this.value)}
-          </div>
-          <div data-element="body" class="column-chart__chart">
-            ${this.getLinesTemplate()}
-          </div>
+          <div data-element="header" class="column-chart__header"></div>
+          <div data-element="body" class="column-chart__chart"></div>
         </div>
       </div>
     `;
   }
 
-  update(data) {
-    this.data = data;
-    this.chartBody.innerHTML = this.getLinesTemplate();
+  async update(from, to) {
+    this.clearData();
+
+    const url = new URL(this.url, BACKEND_URL);
+    const { searchParams } = url;
+    searchParams.append("from", from);
+    searchParams.append("to", to);
+
+    const result = await fetchJson(url);
+    const resultArr = Object.entries(result);
+    this.data = resultArr.map(([key, value]) => value);
+    this.value = this.data.reduce((sum, value) => value + sum);
+
+    this.refresh();
+    return result;
+  }
+
+  refresh() {
+    if (this.hasData()) {
+      this.element.classList.remove("column-chart_loading");
+    } else {
+      this.element.classList.add("column-chart_loading");
+    }
+
+    this.subElements.body.innerHTML = this.getLinesTemplate();
+    this.subElements.header.innerHTML = this.formatHeading(this.value);
   }
 
   render() {
-    const element = document.createElement("div"); // (*)
+    const element = document.createElement("div");
     element.innerHTML = this.getTemplate();
-
-    // NOTE: в этой строке мы избавляемся от обертки-пустышки в виде `div`
-    // который мы создали на строке (*)
     this.element = element.firstElementChild;
-    this.chartBody = element.querySelector("div[data-element=body]");
-  }
 
-  initEventListeners() {
-    // NOTE: в данном методе добавляем обработчики событий, если они есть
+    this.subElements = {
+      body: element.querySelector("div[data-element=body]"),
+      header: element.querySelector("div[data-element=header]"),
+    };
+
+    this.refresh();
   }
 
   remove() {
@@ -92,6 +124,5 @@ export default class ColumnChart {
 
   destroy() {
     this.remove();
-    // NOTE: удаляем обработчики событий, если они есть
   }
 }
