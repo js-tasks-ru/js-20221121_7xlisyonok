@@ -58,7 +58,6 @@ export default class SortableTable {
     const result = await fetchJson(url);
     this.rows.push(...result.map((row) => new TableRow(row, this.columns)));
 
-    // is body rendered?
     if (this.isBodyRendered) this.renderBody();
     this.isLoading = false;
   }
