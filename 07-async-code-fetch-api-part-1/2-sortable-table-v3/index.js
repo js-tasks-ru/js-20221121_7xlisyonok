@@ -1,6 +1,5 @@
 import SortableTableComparers from "./comparers.js";
 import fetchJson from "./utils/fetch-json.js";
-
 const BACKEND_URL = "https://course-js.javascript.ru";
 
 export default class SortableTable {
@@ -10,9 +9,12 @@ export default class SortableTable {
   /** @type {[TableRow]} */
   rows = [];
 
+  /** @type {id: string, order: "asc"|"desc"} */
+  sorted = {};
+
   /**
    * @param {[ Object ]} headers - Массив конструкторов для TableColumn
-   * @param {{ data: [], sorted: {id: string, order: "asc"|"desc">} }} param1 Данные и параметры сортировки
+   * @param {{ data: [], sorted: {id: string, order: "asc"|"desc"} }} param1 Данные и параметры сортировки
    */
   constructor(
     headers,
@@ -43,7 +45,9 @@ export default class SortableTable {
     this.rows = [];
   }
 
-  async loadNextPage(columnId, order) {
+  async loadNextPage(columnId = this.sorted.id, order = this.sorted.order) {
+    this.isLoading = true;
+
     const url = new URL(this.url, BACKEND_URL);
     const { searchParams: sp } = url;
     const count = this.rows.length;
@@ -56,6 +60,7 @@ export default class SortableTable {
 
     // is body rendered?
     if (this.isBodyRendered) this.renderBody();
+    this.isLoading = false;
   }
 
   async sortOnServer(columnId, order) {
@@ -135,11 +140,24 @@ export default class SortableTable {
         const newOrder = columnOrder === "desc" ? "asc" : "desc";
         this.sort(columnId, newOrder);
       },
+
+      windowScroll: () => {
+        if (this.isLoading) return;
+
+        const myRect = this.element.getBoundingClientRect();
+        const docHeight = document.documentElement.clientHeight;
+        const realBottom = myRect.bottom - docHeight;
+
+        if (realBottom < 0) {
+          this.loadNextPage();
+        }
+      },
     };
 
     const { header } = this.subElements;
-    const { headerClick } = this.listeners;
+    const { headerClick, windowScroll } = this.listeners;
     header.addEventListener("pointerdown", headerClick);
+    window.addEventListener("scroll", windowScroll);
   }
 
   remove() {
@@ -152,8 +170,9 @@ export default class SortableTable {
     this.rows.forEach((row) => row.destroy());
 
     const { header } = this.subElements;
-    const { headerClick } = this.listeners;
+    const { headerClick, windowScroll } = this.listeners;
     header.removeEventListener("pointerdown", headerClick);
+    window.removeEventListener("scroll", windowScroll);
   }
 }
 
