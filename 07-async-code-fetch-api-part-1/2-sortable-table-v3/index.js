@@ -14,43 +14,72 @@ export default class SortableTable {
    * @param {[ Object ]} headers - Массив конструкторов для TableColumn
    * @param {{ data: [], sorted: {id: string, order: "asc"|"desc">} }} param1 Данные и параметры сортировки
    */
-  constructor(headers, { data = [], sorted = null } = {}) {
+  constructor(
+    headers,
+    { data = [], sorted = null, url, perPage = 30, isSortLocally = false } = {}
+  ) {
     this.columns = headers.map((conf) => new TableColumn(conf));
     this.rows = data.map((row) => new TableRow(row, this.columns));
+    this.url = url;
+    this.isSortLocally = isSortLocally;
+    this.perPage = perPage;
 
     if (sorted) {
-      this.sort(sorted.id, sorted.order);
+      this.sorted = sorted;
     } else {
       const sortColumnId = this.columns.find((column) => column.sortable)?.id;
-      if (sortColumnId) this.sort(sortColumnId);
+      this.sorted = { id: sortColumnId, order: "asc" };
     }
 
     this.render();
-    this.initEventListeners();
-  }
-
-  sortOnClient(id, order) {
-    //
-  }
-
-  sortOnServer(id, order) {
-    //
   }
 
   getColumn(id) {
     return this.columns.find((column) => column.id === id);
   }
 
-  sort(columnId, order = "asc") {
+  clearData() {
+    this.rows.forEach((row) => row.destroy());
+    this.rows = [];
+  }
+
+  async loadNextPage(columnId, order) {
+    const url = new URL(this.url, BACKEND_URL);
+    const { searchParams: sp } = url;
+    const count = this.rows.length;
+    sp.append("_sort", columnId);
+    sp.append("_order", order);
+    sp.append("_start", count);
+    sp.append("_end", count + this.perPage);
+    const result = await fetchJson(url);
+    this.rows.push(...result.map((row) => new TableRow(row, this.columns)));
+
+    // is body rendered?
+    if (this.isBodyRendered) this.renderBody();
+  }
+
+  async sortOnServer(columnId, order) {
+    this.clearData();
+    return this.loadNextPage(columnId, order);
+  }
+
+  async sortOnClient(columnId, order) {
+    const column = this.getColumn(columnId);
+    const comparer = SortableTableComparers.get(column.sortType, order);
+    this.rows.sort((a, b) => comparer(a.data[columnId], b.data[columnId]));
+    if (this.isBodyRendered) this.renderBody();
+  }
+
+  async sort(columnId, order = "asc") {
     const column = this.getColumn(columnId);
     this.columns.forEach((column) => column.setSort());
     column.setSort(order);
 
-    const comparer = SortableTableComparers.get(column.sortType, order);
-    this.rows.sort((a, b) => comparer(a.data[columnId], b.data[columnId]));
-
-    // is body rendered?
-    if (this.isBodyRendered) this.renderBody();
+    if (this.isSortLocally) {
+      await this.sortOnClient(columnId, order);
+    } else {
+      await this.sortOnServer(columnId, order);
+    }
   }
 
   getTemplate() {
@@ -66,6 +95,7 @@ export default class SortableTable {
     const header = this.subElements.header;
     header.innerHTML = "";
     this.columns.forEach((column) => header.append(column.element));
+    this.initEventListeners();
   }
 
   renderBody() {
@@ -78,7 +108,7 @@ export default class SortableTable {
     return Boolean(this.subElements);
   }
 
-  render() {
+  async render() {
     const element = document.createElement("div");
     element.innerHTML = this.getTemplate();
     this.element = element.firstElementChild;
@@ -89,6 +119,8 @@ export default class SortableTable {
 
     this.renderHeader();
     this.renderBody();
+
+    await this.sort(this.sorted.id, this.sorted.order);
   }
 
   initEventListeners() {
