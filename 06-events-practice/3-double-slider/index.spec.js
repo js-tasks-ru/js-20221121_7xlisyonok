@@ -128,11 +128,17 @@ describe('events-practice/double-slider', () => {
       bubbles: true
     });
 
+    const up = new MouseEvent('pointerup', {
+      bubbles: true
+    });
+
     leftSlider.dispatchEvent(down);
     leftSlider.dispatchEvent(moveLeft);
+    leftSlider.dispatchEvent(up);
 
     rightSlider.dispatchEvent(down);
     rightSlider.dispatchEvent(moveRight);
+    leftSlider.dispatchEvent(up);
 
     expect(leftBoundary).toHaveTextContent(doubleSlider.min);
     expect(rightBoundary).toHaveTextContent(doubleSlider.max);
