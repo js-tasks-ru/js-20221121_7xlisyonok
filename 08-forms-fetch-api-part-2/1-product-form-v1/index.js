@@ -4,7 +4,6 @@ import fetchJson from "./utils/fetch-json.js";
 const IMGUR_CLIENT_ID = "28aaa2e823b03b1";
 const BACKEND_URL = "https://course-js.javascript.ru";
 
-// TODO: escapeHtml
 // TODO: Сохранение данных
 export default class ProductForm {
   fieldsInfo = {
