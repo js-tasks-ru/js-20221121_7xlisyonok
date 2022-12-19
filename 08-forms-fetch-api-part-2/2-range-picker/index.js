@@ -1,5 +1,4 @@
-// TODO: Компонент перерисовывает дни, надо нормально разделить по режимам,
-// и при клике по дням, не перерисовывать копонент, только при клике влево / вправо
+const LOCALE = "ru";
 export default class RangePicker {
   documentClick = (event) => {
     // Клик по одному из дней
@@ -98,11 +97,11 @@ export default class RangePicker {
   }
 
   get prevMonthName() {
-    return this.viewPrev.toLocaleString("default", { month: "long" });
+    return this.viewPrev.toLocaleString(LOCALE, { month: "long" });
   }
 
   get currMonthName() {
-    return this.view.toLocaleString("default", { month: "long" });
+    return this.view.toLocaleString(LOCALE, { month: "long" });
   }
 
   /**
@@ -230,8 +229,8 @@ export default class RangePicker {
   refreshValue() {
     const { from, to } = this.subElements;
 
-    from.innerHTML = this.from.toLocaleDateString();
-    to.innerHTML = this.to.toLocaleDateString();
+    from.innerHTML = this.from.toLocaleDateString(LOCALE);
+    to.innerHTML = this.to.toLocaleDateString(LOCALE);
   }
 
   render() {
