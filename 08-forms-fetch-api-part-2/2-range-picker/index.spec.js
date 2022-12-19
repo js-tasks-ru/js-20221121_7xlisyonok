@@ -234,6 +234,16 @@ describe('forms-fetch-api-part-2/range-picker', () => {
       bubbles: true
     }));
 
+    // 7xLisy
+    // В тесте похоже ошибка: Он проверяет наличие элементов rangepicker__selected-from/to после закрытия селектора
+    // Тогда как другие тесты проверяют отсутствие HTML в selector после его закрытия))
+    // Судя по комментарию ниже, пропущен повторный клик, снова открывающий селектор
+
+    // open date picker
+    input.dispatchEvent(new MouseEvent('click', {
+      bubbles: true
+    }));
+
     from = rangePicker.element.querySelector('.rangepicker__selected-from');
     to = rangePicker.element.querySelector('.rangepicker__selected-to');
 
